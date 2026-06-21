@@ -1,0 +1,21 @@
+# Rust
+/target/
+Cargo.lock
+
+# Arquivos de ambiente e segredos
+.env
+*.env
+
+# Pasta de produção (binários, chaves, configs sensíveis)
+prod/
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

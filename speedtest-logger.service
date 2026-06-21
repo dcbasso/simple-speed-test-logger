@@ -1,0 +1,16 @@
+[Unit]
+Description=Speedtest Logger (registra teste de velocidade no Google Sheets)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/speedtest-logger --config /etc/speedtest-logger/config.json
+User=speedtest-logger
+Group=speedtest-logger
+
+# Hardening básico
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log
