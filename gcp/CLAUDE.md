@@ -184,6 +184,62 @@ toggleTheme(): void {
 
 ---
 
+## Angular Rules (Non-Negotiable)
+
+These rules apply to every Angular file. Never deviate without explicit user approval.
+
+### 1. Standalone only — no NgModule
+Every component, directive, and pipe must use `standalone: true`. Never create or reference an NgModule.
+```typescript
+@Component({ standalone: true, imports: [...], ... })
+```
+
+### 2. Always `ChangeDetectionStrategy.OnPush`
+Every component must declare `changeDetection: ChangeDetectionStrategy.OnPush`. Never use the default.
+```typescript
+@Component({ ..., changeDetection: ChangeDetectionStrategy.OnPush })
+```
+
+### 3. No memory leaks — always unsubscribe
+Never subscribe without cleanup. Prefer the `async` pipe in templates. When subscribing in a class, use `takeUntilDestroyed()` from `@angular/core/rxjs-interop`.
+```typescript
+// in a component
+private destroy$ = inject(DestroyRef);
+this.service.data$.pipe(takeUntilDestroyed(this.destroy$)).subscribe(...);
+```
+Never use `ngOnDestroy` + manual `unsubscribe()` — it is error-prone and verbose.
+
+### 4. No hardcoded user-facing strings
+Every string visible to the user must come from the i18n files (`src/assets/i18n/pt-BR.json` and `en.json`). Use the translate pipe in templates and `TranslateService.instant()` in components.
+```html
+<!-- correct -->
+<h1>{{ 'DASHBOARD.TITLE' | translate }}</h1>
+<!-- WRONG — never do this -->
+<h1>Dashboard</h1>
+```
+
+### 5. No `any` in TypeScript
+Always type everything explicitly. If the type is unknown, use `unknown` and narrow it. `any` silences the compiler and hides bugs.
+
+### 6. Business logic belongs in services, not components
+Components handle only template binding and user events. Any data transformation, API call, state management, or conditional logic goes in a `core/` or `features/*/` service.
+
+### 7. No new external libraries without approval
+Before adding any `npm install <package>` that is not already in `package.json`, stop and ask the user. Explain:
+- What the library does
+- Why the built-in Angular / Angular Material solution is not sufficient
+- The package's weekly downloads and last publish date (popularity and maintenance signal)
+
+Approved packages already in scope (no need to ask): `@angular/material`, `@angular/fire`, `@ngx-translate/core`, `@ngx-translate/http-loader`, `ngx-charts`.
+
+### 8. Lazy-loaded routes only
+Every feature route must use `loadComponent`. Never import a feature component directly in the router config.
+```typescript
+{ path: 'dashboard', loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent) }
+```
+
+---
+
 ## Summary Table
 
 | Rule | Applies to |
