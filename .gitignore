@@ -1,10 +1,14 @@
 # Rust
 /target/
+**/target/
 Cargo.lock
 
 # Arquivos de ambiente e segredos
 .env
 *.env
+
+# Configuração local com credenciais (commitar apenas o .example)
+gcp/client/config.json
 
 # Pasta de produção (binários, chaves, configs sensíveis)
 prod/
