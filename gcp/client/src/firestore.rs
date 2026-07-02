@@ -97,7 +97,7 @@ pub async fn append_document(
     result: &SpeedtestResult,
 ) -> Result<()> {
     let url = format!(
-        "https://firestore.googleapis.com/v1/projects/{}/databases/(default)/documents/{}",
+        "https://firestore.googleapis.com/v1/projects/{}/databases/speedtest-monitordb-one/documents/{}",
         config.project_id, config.collection
     );
 

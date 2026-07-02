@@ -104,24 +104,26 @@ sudo chmod 600 /etc/speedtest-logger/service-account.json
 
 #### 6.1 — Criar credenciais OAuth2
 
-1. No console GCP, vá em **APIs & Services → Credentials**
-2. Clique em **Create Credentials → OAuth client ID**
-3. Se solicitado, configure a **OAuth consent screen** primeiro:
-   - User Type: **External**
-   - App name: `speedtest-logger`
-   - Support email: seu email
-   - Em **Scopes**, adicione `https://www.googleapis.com/auth/gmail.send`
-   - Em **Test users**, adicione o seu email
-4. Volte em **Create Credentials → OAuth client ID**
-5. Application type: **Desktop app**
-6. Clique em **Create** e anote o **Client ID** e o **Client Secret**
+> **Nota:** O Google reorganizou a interface OAuth. Os passos abaixo refletem a interface atual do **Google Auth Platform**. Se você ver o layout antigo em **APIs & Services → Credentials**, as opções são equivalentes.
+
+1. No console GCP, vá em **Google Auth Platform → Clients**
+   - Se solicitado a configurar a consent screen primeiro, preencha as seções do menu lateral:
+     - **Branding**: nome do app (`speedtest-logger`), e-mail de suporte
+     - **Audience**: User type **External**
+     - **Data Access → Add or remove scopes**: adicione `https://www.googleapis.com/auth/gmail.send`
+     - **Audience → Test users**: adicione o seu e-mail
+2. Clique em **Create client**
+3. Application type: **Desktop app**
+4. Clique em **Create** e anote o **Client ID** e o **Client Secret** (ou baixe o arquivo JSON)
 
 #### 6.2 — Obter o refresh token (executar uma única vez)
 
-Instale a biblioteca Python necessária:
+Instale a biblioteca Python usando `pipx` (gerencia o ambiente virtual automaticamente, sem poluir o sistema):
 ```bash
-pip install google-auth-oauthlib
+pipx install google-auth-oauthlib
 ```
+
+> Se `pipx` não estiver instalado: `sudo apt install pipx && pipx ensurepath`
 
 Execute o script abaixo localmente (substitua os valores):
 ```python
