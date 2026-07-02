@@ -4,7 +4,7 @@ Description=Dispara o speedtest-logger periodicamente
 [Timer]
 # Ajuste para o mesmo valor de "interval_minutes" do config.json
 OnBootSec=2min
-OnUnitActiveSec=15min
+OnUnitActiveSec=5min
 AccuracySec=30s
 Persistent=true
 

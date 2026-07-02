@@ -13,6 +13,14 @@ gcp/client/config.json
 # Pasta de produção (binários, chaves, configs sensíveis)
 prod/
 
+# Dados sensíveis de deploy GCP (credenciais, chaves, tokens)
+gcp/server/deploy/
+gcp/client/deploy/
+gcp/deploy-sa-key.sh
+
+# Configuração local do Claude Code
+.claude/
+
 # Editor / IDE
 .idea/
 .vscode/
