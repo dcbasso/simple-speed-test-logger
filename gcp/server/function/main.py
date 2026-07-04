@@ -144,27 +144,30 @@ def _create_incident(db: firestore.Client) -> str:
 def _close_latest_incident(db: firestore.Client) -> None:
     """Updates the most recent open incident with its recovery time and duration.
 
-    Finds the latest incident where recovered_at is None and sets the
-    recovered_at timestamp and duration_minutes fields.
+    Queries the most recent incident by started_at and closes it if still open.
+    Avoids a composite index by filtering recovered_at in Python.
 
     Args:
         db: Authenticated Firestore client.
     """
     docs = (
         db.collection(COLLECTION_INCIDENTS)
-        .where("recovered_at", "==", None)
         .order_by("started_at", direction=firestore.Query.DESCENDING)
         .limit(1)
         .stream()
     )
     now = datetime.now(timezone.utc)
     for doc in docs:
-        started_at = doc.to_dict().get("started_at")
+        data = doc.to_dict()
+        if data.get("recovered_at") is not None:
+            logger.warning("Latest incident %s is already closed — skipping", doc.id)
+            return
+        started_at = data.get("started_at")
         duration = None
         if isinstance(started_at, datetime):
             duration = round((now - started_at.astimezone(timezone.utc)).total_seconds() / 60)
         doc.reference.update({"recovered_at": now, "duration_minutes": duration})
-        logger.info("Incident %s closed — duration: %s min", doc.id, duration)
+        logger.warning("Incident %s closed — duration: %s min", doc.id, duration)
 
 
 def _build_gmail_service():

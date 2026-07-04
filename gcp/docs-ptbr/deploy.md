@@ -44,7 +44,7 @@ Edite as variáveis no topo do arquivo [gcp/server/deploy.sh](../server/deploy.s
 
 | Variável | Padrão | Descrição |
 |---|---|---|
-| `PROJECT_ID` | `speedtest-monitor-501022` | ID do seu projeto GCP |
+| `PROJECT_ID` | `REDACTED_PROJECT_ID` | ID do seu projeto GCP |
 | `REGION` | `southamerica-east1` | Deve ser a mesma região do Firestore (Passo 3) |
 | `ALERT_EMAIL` | `dcbasso@gmail.com` | Email que recebe alertas de queda/recuperação |
 | `TIMEZONE` | `America/Sao_Paulo` | Fuso horário do Scheduler |
@@ -58,7 +58,7 @@ Após o deploy, dispare a função imediatamente para verificar se tudo funciona
 
 ```bash
 gcloud scheduler jobs run speedtest-monitor-scheduler \
-  --project=speedtest-monitor-501022 \
+  --project=REDACTED_PROJECT_ID \
   --location=southamerica-east1
 ```
 
@@ -67,7 +67,7 @@ Em seguida, veja os logs da função:
 ```bash
 gcloud functions logs read check-internet-status \
   --gen2 \
-  --project=speedtest-monitor-501022 \
+  --project=REDACTED_PROJECT_ID \
   --region=us-east1 \
   --limit=50
 ```
@@ -104,8 +104,8 @@ Para deletar tudo que foi deployado:
 
 ```bash
 gcloud scheduler jobs delete speedtest-monitor-scheduler \
-  --project=speedtest-monitor-501022 --location=southamerica-east1
+  --project=REDACTED_PROJECT_ID --location=southamerica-east1
 
 gcloud functions delete check-internet-status \
-  --gen2 --project=speedtest-monitor-501022 --region=us-east1
+  --gen2 --project=REDACTED_PROJECT_ID --region=us-east1
 ```

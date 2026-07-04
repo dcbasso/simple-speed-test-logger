@@ -10,14 +10,14 @@ Create `gcp/client/` as a standalone Rust workspace that compiles and runs indep
 sending speedtest results to the `speedtest_results` Firestore collection.
 
 ## Acceptance Criteria
-- [ ] `cargo build --release` succeeds inside `gcp/client/`
-- [ ] Running the binary executes a real speedtest and writes a document to Firestore
-- [ ] All fields from `SpeedtestResult` are present in the Firestore document
-- [ ] Auth uses Service Account JWT (RS256) with scope `https://www.googleapis.com/auth/datastore`
-- [ ] `config.json` uses the new `gcp` section (project_id, collection) instead of `google` section
-- [ ] Timeout and error handling behave identically to the current binary
-- [ ] Every public function has rustdoc (`///`) documentation
-- [ ] All code is in English
+- [x] `cargo build --release` succeeds inside `gcp/client/`
+- [x] Running the binary executes a real speedtest and writes a document to Firestore
+- [x] All fields from `SpeedtestResult` are present in the Firestore document
+- [x] Auth uses Service Account JWT (RS256) with scope `https://www.googleapis.com/auth/datastore`
+- [x] `config.json` uses the new `gcp` section (project_id, collection) instead of `google` section
+- [x] Timeout and error handling behave identically to the current binary
+- [x] Every public function has rustdoc (`///`) documentation
+- [x] All code is in English
 
 ## Technical Notes
 

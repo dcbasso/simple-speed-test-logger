@@ -11,13 +11,13 @@ Write Terraform configuration that provisions all GCP resources needed to run th
 so that `terraform apply` brings up a fully working backend from scratch.
 
 ## Acceptance Criteria
-- [ ] `terraform init` succeeds
-- [ ] `terraform plan` shows no errors against a real GCP project
-- [ ] `terraform apply` creates all resources listed below
-- [ ] `terraform destroy` removes all managed resources cleanly
-- [ ] No secrets or credentials committed to the repo (use variables and Secret Manager data sources)
-- [ ] All resources tagged with `project = "speedtest-logger"`
-- [ ] All Terraform files have comment blocks explaining each resource
+- [x] `terraform init` succeeds
+- [x] `terraform plan` shows no errors against a real GCP project
+- [x] `terraform apply` creates all resources listed below
+- [x] `terraform destroy` removes all managed resources cleanly
+- [x] No secrets or credentials committed to the repo (use variables and Secret Manager data sources)
+- [x] All resources tagged with `project = "speedtest-logger"`
+- [x] All Terraform files have comment blocks explaining each resource
 
 ## Resources to provision
 
