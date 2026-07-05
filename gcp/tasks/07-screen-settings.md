@@ -10,19 +10,19 @@ Implement `gcp/server/web/src/app/features/settings/` with a reactive form that 
 config from Firestore and saves changes back.
 
 ## Acceptance Criteria
-- [ ] Form loads with current values from `monitor_config/current` on entry
-- [ ] If document does not exist, form loads with default values
-- [ ] "Save" button is disabled when form is pristine or invalid
-- [ ] "Cancel" restores the last saved values (no Firestore read — use in-memory snapshot)
-- [ ] Saving writes to `monitor_config/current` and shows success snackbar
-- [ ] Error on save shows error snackbar
-- [ ] Spinner shown on button while saving; fields disabled during save
-- [ ] `max_minutes_without_data` validation: must be greater than `check_interval_minutes`
-- [ ] "Last updated" shows `updated_at` timestamp after save
-- [ ] All strings use `translate` pipe
-- [ ] Works in both light and dark theme
-- [ ] Component and all methods have JSDoc
-- [ ] Code in English
+- [x] Form loads with current values from `monitor_config/current` on entry
+- [x] If document does not exist, form loads with default values
+- [x] "Save" button is disabled when form is pristine or invalid
+- [x] "Cancel" restores the last saved values (no Firestore read — use in-memory snapshot)
+- [x] Saving writes to `monitor_config/current` and shows success snackbar
+- [x] Error on save shows error snackbar
+- [x] Spinner shown on button while saving; fields disabled during save
+- [x] `max_minutes_without_data` validation: must be greater than `check_interval_minutes`
+- [x] "Last updated" shows `updated_at` timestamp after save
+- [x] All strings use `translate` pipe
+- [x] Works in both light and dark theme
+- [x] Component and all methods have JSDoc
+- [x] Code in English
 
 ## Technical Notes
 

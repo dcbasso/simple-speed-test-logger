@@ -44,7 +44,7 @@ Edit the variables at the top of [gcp/server/deploy.sh](../server/deploy.sh) bef
 
 | Variable | Default | Description |
 |---|---|---|
-| `PROJECT_ID` | `speedtest-monitor-501022` | Your GCP project ID |
+| `PROJECT_ID` | `REDACTED_PROJECT_ID` | Your GCP project ID |
 | `REGION` | `southamerica-east1` | Must match the Firestore region from Step 3 |
 | `ALERT_EMAIL` | `dcbasso@gmail.com` | Email that receives down/recovery alerts |
 | `TIMEZONE` | `America/Sao_Paulo` | Scheduler timezone |
@@ -58,7 +58,7 @@ After deploying, trigger the function immediately to verify it works:
 
 ```bash
 gcloud scheduler jobs run speedtest-monitor-scheduler \
-  --project=speedtest-monitor-501022 \
+  --project=REDACTED_PROJECT_ID \
   --location=southamerica-east1
 ```
 
@@ -67,7 +67,7 @@ Then check the function logs:
 ```bash
 gcloud functions logs read check-internet-status \
   --gen2 \
-  --project=speedtest-monitor-501022 \
+  --project=REDACTED_PROJECT_ID \
   --region=us-east1 \
   --limit=50
 ```
@@ -113,8 +113,8 @@ To remove all deployed resources:
 
 ```bash
 gcloud scheduler jobs delete speedtest-monitor-scheduler \
-  --project=speedtest-monitor-501022 --location=southamerica-east1
+  --project=REDACTED_PROJECT_ID --location=southamerica-east1
 
 gcloud functions delete check-internet-status \
-  --gen2 --project=speedtest-monitor-501022 --region=us-east1
+  --gen2 --project=REDACTED_PROJECT_ID --region=us-east1
 ```

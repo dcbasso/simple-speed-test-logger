@@ -9,15 +9,15 @@ Implement `gcp/server/web/src/app/features/login/login.component.ts` (and templa
 as described in the screen spec.
 
 ## Acceptance Criteria
-- [ ] Screen displays app title and "Sign in with Google" button
-- [ ] Button is disabled with spinner while the Google popup is open
-- [ ] Successful login with allowed email redirects to `/dashboard`
-- [ ] Login with any other email shows error message; user stays on `/login`
-- [ ] If user is already authenticated (page refresh), redirects immediately to `/dashboard`
-- [ ] All strings use `translate` pipe — no hardcoded text in template
-- [ ] Works correctly in both light and dark theme
-- [ ] Component and all methods have JSDoc
-- [ ] Code is in English
+- [x] Screen displays app title and "Sign in with Google" button
+- [x] Button is disabled with spinner while the Google popup is open
+- [x] Successful login with allowed email redirects to `/dashboard`
+- [x] Login with any other email shows error message; user stays on `/login`
+- [x] If user is already authenticated (page refresh), redirects immediately to `/dashboard`
+- [x] All strings use `translate` pipe — no hardcoded text in template
+- [x] Works correctly in both light and dark theme
+- [x] Component and all methods have JSDoc
+- [x] Code is in English
 
 ## Technical Notes
 - Delegate all auth logic to `AuthService` (created in task 03) — component only calls and reacts

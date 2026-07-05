@@ -18,6 +18,17 @@ gcp/server/deploy/
 gcp/client/deploy/
 gcp/deploy-sa-key.sh
 
+# Angular web app — deploy local e cache Firebase
+gcp/server/web/deploy/
+gcp/server/web/.firebase/
+
+# Terraform — valores de variáveis locais (podem conter credenciais)
+gcp/server/terraform/terraform.tfvars
+gcp/server/terraform/.terraform/
+gcp/server/terraform/.terraform.lock.hcl
+gcp/server/terraform/terraform.tfstate
+gcp/server/terraform/terraform.tfstate.backup
+
 # Configuração local do Claude Code
 .claude/
 
