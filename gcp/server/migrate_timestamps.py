@@ -6,20 +6,21 @@ Uses the Firestore REST API with a Service Account JWT — same auth flow as the
 Rust client — so no extra IAM roles are required.
 
 Run:
-    python3 migrate_timestamps.py
+    GCP_PROJECT_ID=<project> FIRESTORE_DATABASE=<db> SA_KEY_PATH=<path> python3 migrate_timestamps.py
 """
 
 import json
+import os
 import time
 import requests
 from datetime import datetime, timezone
 
 import jwt  # pip install PyJWT cryptography
 
-PROJECT_ID   = "REDACTED_PROJECT_ID"
-DATABASE_ID  = "speedtest-monitordb-one"
-COLLECTION   = "speedtest_results"
-SA_KEY_PATH  = "/home/dcbasso/worksapce/smallProjects/simple-speed-test-logger/gcp/client/deploy/REDACTED_PROJECT_ID-sa.json"
+PROJECT_ID   = os.environ["GCP_PROJECT_ID"]
+DATABASE_ID  = os.environ.get("FIRESTORE_DATABASE", "(default)")
+COLLECTION   = os.environ.get("FIRESTORE_COLLECTION", "speedtest_results")
+SA_KEY_PATH  = os.environ["SA_KEY_PATH"]
 
 FIRESTORE_BASE = (
     f"https://firestore.googleapis.com/v1/projects/{PROJECT_ID}"
