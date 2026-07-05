@@ -27,16 +27,37 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Timestamp } from '@angular/fire/firestore';
 import { NavbarComponent } from '../../shared/navbar/navbar.component';
 import { SettingsDataService } from './settings-data.service';
-import { MonitorConfig } from '../../core/models/monitor-config.model';
+import { MonitorConfig, Recipient } from '../../core/models/monitor-config.model';
 import { environment } from '../../../environments/environment';
 
-const DEFAULTS: Omit<MonitorConfig, 'updated_at'> = {
-  check_interval_minutes: 15,
+const SUBJECT_PREFIX = '[speedtest-logger] ';
+const DEFAULT_SUBJECT_DOWN_SUFFIX = 'Internet is down';
+const DEFAULT_SUBJECT_UP_SUFFIX   = 'Internet is back';
+const DEFAULT_BODY_DOWN =
+  'No speedtest record since ${DATETIME_DOWN}.\n\nHi ${NAME}, you will receive another email once the internet comes back.';
+const DEFAULT_BODY_UP =
+  'Hi ${NAME}, the internet is back!\n\nDown at: ${DATETIME_DOWN}\nRecovered at: ${DATETIME_UP}\nTotal downtime: ${TOTAL_TIME} min';
+
+const FORM_DEFAULTS = {
+  check_interval_minutes:   15,
   max_minutes_without_data: 45,
-  alert_email: environment.allowedEmail,
-  notify_on_down: true,
-  notify_on_recovery: true,
+  email_subject_down:       DEFAULT_SUBJECT_DOWN_SUFFIX,
+  email_subject_up:         DEFAULT_SUBJECT_UP_SUFFIX,
+  email_body_down:          DEFAULT_BODY_DOWN,
+  email_body_up:            DEFAULT_BODY_UP,
+  notify_on_down:           true,
+  notify_on_recovery:       true,
 };
+
+/**
+ * Strips the mandatory "[speedtest-logger] " prefix from a stored subject string.
+ * Returns only the editable suffix so it can be bound to the form field.
+ *
+ * @param subject - Full subject string as stored in Firestore.
+ */
+function stripSubjectPrefix(subject: string): string {
+  return subject.startsWith(SUBJECT_PREFIX) ? subject.slice(SUBJECT_PREFIX.length) : subject;
+}
 
 /**
  * Cross-field validator: max_minutes_without_data must be greater than check_interval_minutes.
@@ -65,11 +86,25 @@ function formatTimestamp(ts: Timestamp): string {
 }
 
 /**
+ * Reconstructs a Recipient list from a stored config, applying lazy migration from
+ * the legacy single `alert_email` field when `alert_emails` is absent.
+ *
+ * @param config - The config document loaded from Firestore.
+ */
+function buildRecipients(config: MonitorConfig): Recipient[] {
+  const emails = config.alert_emails?.length
+    ? config.alert_emails
+    : config.alert_email ? [config.alert_email] : [environment.allowedEmail];
+  const names = config.recipient_names ?? {};
+  return emails.map(email => ({ email, name: names[email] ?? '' }));
+}
+
+/**
  * Settings screen.
  *
- * Loads the current monitor configuration from `monitor_config/current` in Firestore
- * and provides a reactive form to edit and persist check interval, alert threshold,
- * email address, and notification toggles.
+ * Manages monitoring intervals, alert thresholds, email recipients (with display names),
+ * per-alert email subjects, and body templates with placeholder substitution support.
+ * All values are persisted to `monitor_config/current` in Firestore.
  */
 @Component({
   selector: 'app-settings',
@@ -128,13 +163,61 @@ function formatTimestamp(ts: Timestamp): string {
           </mat-card-header>
           <mat-card-content>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>{{ 'SETTINGS.FIELD_EMAIL' | translate }}</mat-label>
-              <input matInput type="email" formControlName="alert_email" />
-              @if (form.get('alert_email')?.invalid && form.get('alert_email')?.touched) {
-                <mat-error>{{ 'SETTINGS.FIELD_EMAIL' | translate }}</mat-error>
+            <p class="section-label">{{ 'SETTINGS.SECTION_RECIPIENTS' | translate }}</p>
+
+            <div class="chip-list">
+              @for (r of recipients(); track r.email; let i = $index) {
+                <div class="recipient-chip">
+                  <span class="chip-body" (click)="openEditRecipient(i)">
+                    <span class="chip-email">{{ r.email }}</span>
+                    <span class="chip-sep">|</span>
+                    <span class="chip-name">{{ r.name }}</span>
+                  </span>
+                  <button
+                    type="button"
+                    class="chip-remove"
+                    (click)="removeRecipient(i)"
+                    [attr.aria-label]="'COMMON.REMOVE' | translate"
+                  >×</button>
+                </div>
               }
-            </mat-form-field>
+            </div>
+
+            @if (showRecipientForm()) {
+              <div class="recipient-form" [formGroup]="addForm">
+                <div class="recipient-form-fields">
+                  <mat-form-field appearance="outline" class="recipient-field">
+                    <mat-label>{{ 'SETTINGS.FIELD_RECIPIENT_NAME' | translate }}</mat-label>
+                    <input matInput type="text" formControlName="name" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="recipient-field">
+                    <mat-label>{{ 'SETTINGS.FIELD_RECIPIENT_EMAIL' | translate }}</mat-label>
+                    <input matInput type="email" formControlName="email" />
+                    @if (addForm.get('email')?.invalid && addForm.get('email')?.touched) {
+                      <mat-error>{{ 'SETTINGS.FIELD_EMAIL_INVALID' | translate }}</mat-error>
+                    }
+                  </mat-form-field>
+                </div>
+                <div class="recipient-form-actions">
+                  <button type="button" mat-button (click)="cancelRecipientForm()">
+                    {{ 'SETTINGS.CANCEL' | translate }}
+                  </button>
+                  <button
+                    type="button"
+                    mat-raised-button
+                    color="primary"
+                    (click)="confirmRecipient()"
+                    [disabled]="addForm.invalid"
+                  >
+                    {{ 'SETTINGS.CONFIRM' | translate }}
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <button type="button" mat-stroked-button (click)="openAddRecipient()">
+                + {{ 'SETTINGS.ADD_RECIPIENT' | translate }}
+              </button>
+            }
 
             <div class="checkbox-group">
               <mat-checkbox formControlName="notify_on_down">
@@ -144,6 +227,40 @@ function formatTimestamp(ts: Timestamp): string {
                 {{ 'SETTINGS.FIELD_NOTIFY_RECOVERY' | translate }}
               </mat-checkbox>
             </div>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'SETTINGS.FIELD_SUBJECT_DOWN' | translate }}</mat-label>
+              <span matTextPrefix class="subject-prefix">[speedtest-logger]&nbsp;</span>
+              <input matInput type="text" formControlName="email_subject_down" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'SETTINGS.FIELD_SUBJECT_UP' | translate }}</mat-label>
+              <span matTextPrefix class="subject-prefix">[speedtest-logger]&nbsp;</span>
+              <input matInput type="text" formControlName="email_subject_up" />
+            </mat-form-field>
+
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Email Templates section -->
+        <mat-card class="settings-card">
+          <mat-card-header>
+            <mat-card-title>{{ 'SETTINGS.SECTION_TEMPLATE' | translate }}</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+
+            <p class="placeholder-hint">{{ 'SETTINGS.PLACEHOLDERS_HINT_DOWN' | translate }}</p>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'SETTINGS.FIELD_BODY_DOWN' | translate }}</mat-label>
+              <textarea matInput formControlName="email_body_down" rows="5"></textarea>
+            </mat-form-field>
+
+            <p class="placeholder-hint">{{ 'SETTINGS.PLACEHOLDERS_HINT_UP' | translate }}</p>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'SETTINGS.FIELD_BODY_UP' | translate }}</mat-label>
+              <textarea matInput formControlName="email_body_up" rows="5"></textarea>
+            </mat-form-field>
 
           </mat-card-content>
         </mat-card>
@@ -160,7 +277,7 @@ function formatTimestamp(ts: Timestamp): string {
               mat-button
               type="button"
               (click)="cancel()"
-              [disabled]="form.pristine || saving()"
+              [disabled]="(form.pristine && !recipientsDirty()) || saving()"
             >
               {{ 'SETTINGS.CANCEL' | translate }}
             </button>
@@ -168,7 +285,7 @@ function formatTimestamp(ts: Timestamp): string {
               mat-raised-button
               color="primary"
               type="submit"
-              [disabled]="form.invalid || form.pristine || saving()"
+              [disabled]="form.invalid || (form.pristine && !recipientsDirty()) || saving() || recipients().length === 0"
             >
               @if (saving()) {
                 <mat-spinner diameter="20" />
@@ -211,6 +328,110 @@ function formatTimestamp(ts: Timestamp): string {
       width: 100%;
     }
 
+    .section-label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--mat-sys-on-surface-variant);
+      margin: 0 0 0.25rem;
+    }
+
+    .placeholder-hint {
+      font-size: 0.8rem;
+      color: var(--mat-sys-on-surface-variant);
+      font-family: monospace;
+      margin: 0.25rem 0 0;
+    }
+
+    /* Recipient chips */
+    .chip-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      min-height: 2rem;
+    }
+
+    .recipient-chip {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--mat-sys-outline-variant);
+      border-radius: 1rem;
+      overflow: hidden;
+      height: 2rem;
+      font-size: 0.85rem;
+      background: var(--mat-sys-surface-variant);
+    }
+
+    .chip-body {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0 0.5rem 0 0.75rem;
+      cursor: pointer;
+      height: 100%;
+      user-select: none;
+    }
+
+    .chip-body:hover {
+      background: var(--mat-sys-primary-container);
+    }
+
+    .chip-name {
+      font-weight: 500;
+      color: var(--mat-sys-on-surface);
+    }
+
+    .chip-sep {
+      color: var(--mat-sys-outline);
+    }
+
+    .chip-email {
+      color: var(--mat-sys-on-surface-variant);
+    }
+
+    .chip-remove {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      padding: 0 0.5rem;
+      height: 100%;
+      color: var(--mat-sys-on-surface-variant);
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+
+    .chip-remove:hover {
+      background: var(--mat-sys-error-container);
+      color: var(--mat-sys-on-error-container);
+    }
+
+    /* Inline recipient form */
+    .recipient-form {
+      border: 1px solid var(--mat-sys-outline-variant);
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      background: var(--mat-sys-surface-container-low);
+    }
+
+    .recipient-form-fields {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .recipient-field {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .recipient-form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
     .checkbox-group {
       display: flex;
       flex-direction: column;
@@ -241,6 +462,12 @@ function formatTimestamp(ts: Timestamp): string {
     button[mat-raised-button] mat-spinner {
       display: inline-block;
     }
+
+    .subject-prefix {
+      color: var(--mat-sys-on-surface-variant);
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
   `],
 })
 export class SettingsComponent implements OnInit {
@@ -257,38 +484,72 @@ export class SettingsComponent implements OnInit {
   /** Formatted "dd/MM/yyyy HH:mm" string of last successful save, or null. */
   readonly lastUpdated = signal<string | null>(null);
 
+  /** Current list of email recipients managed outside the reactive form. */
+  readonly recipients = signal<Recipient[]>([]);
+
+  /** True when recipients have been modified since the last save or cancel. */
+  readonly recipientsDirty = signal(false);
+
+  /** Controls visibility of the inline add/edit recipient form. */
+  readonly showRecipientForm = signal(false);
+
+  /** Index of the recipient being edited, or null when adding a new one. */
+  private editingIndex: number | null = null;
+
+  private savedFormValues = { ...FORM_DEFAULTS };
+  private savedRecipients: Recipient[] = [];
+
   readonly form = this.fb.group(
     {
-      check_interval_minutes:   [DEFAULTS.check_interval_minutes,   [Validators.required, Validators.min(5), Validators.max(60)]],
-      max_minutes_without_data: [DEFAULTS.max_minutes_without_data, [Validators.required, Validators.min(1)]],
-      alert_email:              [DEFAULTS.alert_email,              [Validators.required, Validators.email]],
-      notify_on_down:           [DEFAULTS.notify_on_down],
-      notify_on_recovery:       [DEFAULTS.notify_on_recovery],
+      check_interval_minutes:   [FORM_DEFAULTS.check_interval_minutes,   [Validators.required, Validators.min(5), Validators.max(60)]],
+      max_minutes_without_data: [FORM_DEFAULTS.max_minutes_without_data, [Validators.required, Validators.min(1)]],
+      email_subject_down:       [FORM_DEFAULTS.email_subject_down,       Validators.required],
+      email_subject_up:         [FORM_DEFAULTS.email_subject_up,         Validators.required],
+      email_body_down:          [FORM_DEFAULTS.email_body_down,          Validators.required],
+      email_body_up:            [FORM_DEFAULTS.email_body_up,            Validators.required],
+      notify_on_down:           [FORM_DEFAULTS.notify_on_down],
+      notify_on_recovery:       [FORM_DEFAULTS.notify_on_recovery],
     },
     { validators: thresholdValidator },
   );
 
-  private savedValues: Omit<MonitorConfig, 'updated_at'> = { ...DEFAULTS };
+  /** Separate form group for the inline add/edit recipient panel. */
+  readonly addForm = this.fb.group({
+    email: ['', [Validators.required, Validators.email]],
+    name:  ['', Validators.required],
+  });
 
   /**
-   * Subscribes to `monitor_config/current` and patches the form with the loaded values.
-   * Falls back to DEFAULTS when the document does not exist.
+   * Loads the current config from Firestore and patches the form and recipient list.
+   * Applies lazy migration from the legacy `alert_email` field when `alert_emails` is absent.
    */
   ngOnInit(): void {
     this.dataService.getConfig().pipe(
       take(1),
       takeUntilDestroyed(this.destroyRef),
     ).subscribe(config => {
-      const values = config ?? DEFAULTS;
-      this.savedValues = {
-        check_interval_minutes:   values.check_interval_minutes,
-        max_minutes_without_data: values.max_minutes_without_data,
-        alert_email:              values.alert_email,
-        notify_on_down:           values.notify_on_down,
-        notify_on_recovery:       values.notify_on_recovery,
+      const recipientList = config
+        ? buildRecipients(config)
+        : [{ email: environment.allowedEmail, name: '' }];
+
+      this.recipients.set(recipientList);
+      this.savedRecipients = [...recipientList];
+
+      this.savedFormValues = {
+        check_interval_minutes:   config?.check_interval_minutes   ?? FORM_DEFAULTS.check_interval_minutes,
+        max_minutes_without_data: config?.max_minutes_without_data ?? FORM_DEFAULTS.max_minutes_without_data,
+        email_subject_down:       stripSubjectPrefix(config?.email_subject_down ?? (SUBJECT_PREFIX + FORM_DEFAULTS.email_subject_down)),
+        email_subject_up:         stripSubjectPrefix(config?.email_subject_up   ?? (SUBJECT_PREFIX + FORM_DEFAULTS.email_subject_up)),
+        email_body_down:          config?.email_body_down          ?? FORM_DEFAULTS.email_body_down,
+        email_body_up:            config?.email_body_up            ?? FORM_DEFAULTS.email_body_up,
+        notify_on_down:           config?.notify_on_down           ?? FORM_DEFAULTS.notify_on_down,
+        notify_on_recovery:       config?.notify_on_recovery       ?? FORM_DEFAULTS.notify_on_recovery,
       };
-      this.form.patchValue(this.savedValues);
+
+      this.form.patchValue(this.savedFormValues);
       this.form.markAsPristine();
+      this.recipientsDirty.set(false);
+
       if (config?.updated_at) {
         this.lastUpdated.set(formatTimestamp(config.updated_at));
       }
@@ -297,8 +558,8 @@ export class SettingsComponent implements OnInit {
   }
 
   /**
-   * Persists the current form values to Firestore.
-   * Disables the form during the operation and shows a snackbar on success or failure.
+   * Persists the current form values and recipient list to Firestore.
+   * Serialises the recipient signal into `alert_emails` and `recipient_names`.
    */
   async save(): Promise<void> {
     if (this.form.invalid || this.saving()) return;
@@ -308,19 +569,37 @@ export class SettingsComponent implements OnInit {
 
     try {
       const raw = this.form.getRawValue();
-      const values: Omit<MonitorConfig, 'updated_at'> = {
+      const recipientList = this.recipients();
+
+      const values: Omit<MonitorConfig, 'updated_at' | 'alert_email'> = {
         check_interval_minutes:   Number(raw.check_interval_minutes),
         max_minutes_without_data: Number(raw.max_minutes_without_data),
-        alert_email:              raw.alert_email ?? '',
-        notify_on_down:           raw.notify_on_down ?? true,
+        alert_emails:             recipientList.map(r => r.email),
+        recipient_names:          Object.fromEntries(recipientList.map(r => [r.email, r.name])),
+        email_subject_down:       SUBJECT_PREFIX + (raw.email_subject_down ?? FORM_DEFAULTS.email_subject_down),
+        email_subject_up:         SUBJECT_PREFIX + (raw.email_subject_up   ?? FORM_DEFAULTS.email_subject_up),
+        email_body_down:          raw.email_body_down    ?? DEFAULT_BODY_DOWN,
+        email_body_up:            raw.email_body_up      ?? DEFAULT_BODY_UP,
+        notify_on_down:           raw.notify_on_down     ?? true,
         notify_on_recovery:       raw.notify_on_recovery ?? true,
       };
 
       await this.dataService.saveConfig(values);
 
-      this.savedValues = { ...values };
+      this.savedFormValues = {
+        check_interval_minutes:   values.check_interval_minutes,
+        max_minutes_without_data: values.max_minutes_without_data,
+        email_subject_down:       stripSubjectPrefix(values.email_subject_down),
+        email_subject_up:         stripSubjectPrefix(values.email_subject_up),
+        email_body_down:          values.email_body_down,
+        email_body_up:            values.email_body_up,
+        notify_on_down:           values.notify_on_down,
+        notify_on_recovery:       values.notify_on_recovery,
+      };
+      this.savedRecipients = [...recipientList];
       this.lastUpdated.set(formatTimestamp(Timestamp.fromDate(new Date())));
       this.form.markAsPristine();
+      this.recipientsDirty.set(false);
       this.snackBar.open(this.translate.instant('SETTINGS.SAVE_SUCCESS'), '', { duration: 3000 });
     } catch {
       this.snackBar.open(this.translate.instant('SETTINGS.SAVE_ERROR'), '', { duration: 4000 });
@@ -332,11 +611,72 @@ export class SettingsComponent implements OnInit {
   }
 
   /**
-   * Restores the form to the last successfully saved values without a Firestore read.
+   * Restores the form and recipient list to the last successfully saved state.
    */
   cancel(): void {
-    this.form.patchValue(this.savedValues);
+    this.form.patchValue(this.savedFormValues);
     this.form.markAsPristine();
+    this.recipients.set([...this.savedRecipients]);
+    this.recipientsDirty.set(false);
+    this.showRecipientForm.set(false);
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Opens the inline recipient form in "add" mode with empty fields.
+   */
+  openAddRecipient(): void {
+    this.editingIndex = null;
+    this.addForm.reset({ email: '', name: '' });
+    this.showRecipientForm.set(true);
+  }
+
+  /**
+   * Opens the inline recipient form pre-filled with the selected recipient's data.
+   *
+   * @param index - Index of the recipient to edit in the recipients signal.
+   */
+  openEditRecipient(index: number): void {
+    const r = this.recipients()[index];
+    this.editingIndex = index;
+    this.addForm.patchValue({ email: r.email, name: r.name });
+    this.showRecipientForm.set(true);
+  }
+
+  /**
+   * Confirms the add/edit form and updates the recipients signal.
+   * Replaces the existing entry when editing, appends when adding.
+   */
+  confirmRecipient(): void {
+    if (this.addForm.invalid) return;
+    const { email, name } = this.addForm.getRawValue();
+    const current = [...this.recipients()];
+    if (this.editingIndex !== null) {
+      current[this.editingIndex] = { email: email!, name: name! };
+    } else {
+      current.push({ email: email!, name: name! });
+    }
+    this.recipients.set(current);
+    this.recipientsDirty.set(true);
+    this.showRecipientForm.set(false);
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Closes the inline recipient form without saving changes.
+   */
+  cancelRecipientForm(): void {
+    this.showRecipientForm.set(false);
+  }
+
+  /**
+   * Removes a recipient from the list by index.
+   *
+   * @param index - Index of the recipient to remove.
+   */
+  removeRecipient(index: number): void {
+    this.recipients.set(this.recipients().filter((_, i) => i !== index));
+    this.recipientsDirty.set(true);
     this.cdr.markForCheck();
   }
 }
