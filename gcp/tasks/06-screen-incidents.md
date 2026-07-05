@@ -10,18 +10,18 @@ Implement `gcp/server/web/src/app/features/incidents/` including the main compon
 its sub-components (summary cards, incident table).
 
 ## Acceptance Criteria
-- [ ] Screen loads with "Last 30 days" selected by default
-- [ ] Summary cards show total incident count and total offline time for the selected period
-- [ ] Table shows all incidents: start, end (or "Ongoing" badge), duration
-- [ ] Ongoing incident row is highlighted in light red (both themes)
-- [ ] Table is paginated (10 rows per page) with `mat-paginator`
-- [ ] Default sort is `started_at DESC` (most recent first)
-- [ ] Period filter uses same presets as Dashboard
-- [ ] Loading, empty, and error states handled
-- [ ] All strings use `translate` pipe
-- [ ] Works in both light and dark theme
-- [ ] All components and methods have JSDoc
-- [ ] Code in English
+- [x] Screen loads with "Last 30 days" selected by default
+- [x] Summary cards show total incident count and total offline time for the selected period
+- [x] Table shows all incidents: start, end (or "Ongoing" badge), duration
+- [x] Ongoing incident row is highlighted in light red (both themes)
+- [x] Table is paginated (10 rows per page) with `mat-paginator`
+- [x] Default sort is `started_at DESC` (most recent first)
+- [x] Period filter uses same presets as Dashboard
+- [x] Loading, empty, and error states handled
+- [x] All strings use `translate` pipe
+- [x] Works in both light and dark theme
+- [x] All components and methods have JSDoc
+- [x] Code in English
 
 ## Technical Notes
 

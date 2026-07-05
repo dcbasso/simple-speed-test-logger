@@ -11,16 +11,16 @@ Create a working Angular 18+ SPA at `gcp/server/web/` that boots, shows the logi
 and has all shared services and configuration ready for screen implementation.
 
 ## Acceptance Criteria
-- [ ] `ng serve` runs without errors
-- [ ] `ng build` produces a production build without errors
-- [ ] Firebase Auth is configured — Google Sign-In popup works in the browser
-- [ ] Login with the allowed email redirects to `/dashboard` (placeholder page is fine)
-- [ ] Login with any other email is rejected and shows an error message
-- [ ] Language defaults to pt-BR; switching to English updates all translated strings
-- [ ] Light/dark theme toggle works; preference persists across page refreshes
-- [ ] `AuthGuard` blocks unauthenticated access to all routes except `/login`
-- [ ] All services and guards have JSDoc on every method
-- [ ] All code in English; all UI strings use translate pipe (no hardcoded strings)
+- [x] `ng serve` runs without errors
+- [x] `ng build` produces a production build without errors
+- [x] Firebase Auth is configured — Google Sign-In popup works in the browser
+- [x] Login with the allowed email redirects to `/dashboard` (placeholder page is fine)
+- [x] Login with any other email is rejected and shows an error message
+- [x] Language defaults to pt-BR; switching to English updates all translated strings
+- [x] Light/dark theme toggle works; preference persists across page refreshes
+- [x] `AuthGuard` blocks unauthenticated access to all routes except `/login`
+- [x] All services and guards have JSDoc on every method
+- [x] All code in English; all UI strings use translate pipe (no hardcoded strings)
 
 ## Technical Notes
 

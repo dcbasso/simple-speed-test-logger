@@ -103,7 +103,7 @@ pub async fn append_document(
 
     let body = serde_json::json!({
         "fields": {
-            "timestamp":       { "stringValue": result.timestamp.to_rfc3339() },
+            "timestamp":       { "timestampValue": result.timestamp.to_rfc3339() },
             "download_mbps":   { "doubleValue": result.download_mbps },
             "upload_mbps":     { "doubleValue": result.upload_mbps },
             "ping_ms":         { "doubleValue": result.ping_ms },

@@ -9,18 +9,18 @@ Implement `gcp/server/web/src/app/features/dashboard/` including the main compon
 its sub-components (date filter, metric cards, charts).
 
 ## Acceptance Criteria
-- [ ] Screen loads with "Last 24h" selected by default
-- [ ] 5 metric cards show average, min, and max for: download, upload, ping, jitter, packet loss
-- [ ] 3 charts render correctly: download+upload (line), ping+jitter (line), packet loss (bar)
-- [ ] Period presets (6h, 24h, 7d, 30d) update data without page reload
-- [ ] Custom range with datepicker works and triggers data reload on "Apply"
-- [ ] Loading state shown while Firestore query runs (skeleton cards, spinner on charts)
-- [ ] Empty state shown when no records exist for selected period
-- [ ] Error state shown on Firestore failure (snackbar)
-- [ ] All strings use `translate` pipe
-- [ ] Works in both light and dark theme
-- [ ] All components and methods have JSDoc
-- [ ] Code in English
+- [x] Screen loads with "Last 24h" selected by default
+- [x] 5 metric cards show average, min, and max for: download, upload, ping, jitter, packet loss
+- [x] 3 charts render correctly: download+upload (line), ping+jitter (line), packet loss (bar)
+- [x] Period presets (6h, 24h, 7d, 30d) update data without page reload
+- [x] Custom range with datepicker works and triggers data reload on "Apply"
+- [x] Loading state shown while Firestore query runs (skeleton cards, spinner on charts)
+- [x] Empty state shown when no records exist for selected period
+- [x] Error state shown on Firestore failure (snackbar)
+- [x] All strings use `translate` pipe
+- [x] Works in both light and dark theme
+- [x] All components and methods have JSDoc
+- [x] Code in English
 
 ## Technical Notes
 

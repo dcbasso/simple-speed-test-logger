@@ -11,15 +11,15 @@ Implement and deploy `gcp/server/function/main.py` as a Cloud Function Gen 2 (HT
 with the same alert logic as the current Apps Script but reading config from Firestore.
 
 ## Acceptance Criteria
-- [ ] Function deploys successfully via `gcloud functions deploy`
-- [ ] When called with no recent Firestore data: sends "internet down" email and creates incident document
-- [ ] When called after recovery: sends "internet back" email and updates incident with `recovered_at`
-- [ ] Does not send duplicate alerts (state check via `monitor_state/current`)
-- [ ] Reads `max_minutes_without_data` and `alert_email` from `monitor_config/current`
-- [ ] Falls back to env var defaults if `monitor_config/current` does not exist
-- [ ] Gmail auth uses OAuth2 refresh token from Secret Manager
-- [ ] Every function has a Google-style docstring
-- [ ] All code is in English
+- [x] Function deploys successfully via `gcloud functions deploy`
+- [x] When called with no recent Firestore data: sends "internet down" email and creates incident document
+- [x] When called after recovery: sends "internet back" email and updates incident with `recovered_at`
+- [x] Does not send duplicate alerts (state check via `monitor_state/current`)
+- [x] Reads `max_minutes_without_data` and `alert_email` from `monitor_config/current`
+- [x] Falls back to env var defaults if `monitor_config/current` does not exist
+- [x] Gmail auth uses OAuth2 refresh token from Secret Manager
+- [x] Every function has a Google-style docstring
+- [x] All code is in English
 
 ## Technical Notes
 
